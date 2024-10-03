@@ -3,7 +3,11 @@ package todo
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
 	"time"
+
+	"github.com/aquasecurity/table"
 )
 
 type Todo struct {
@@ -41,7 +45,7 @@ func (todosList *TodosList) UpdateContent(index int, content string) error {
 
 	time := time.Now()
 	(*todosList)[index].Content = content
-	(*todosList)[index].UpdatedAt =  &time
+	(*todosList)[index].UpdatedAt = &time
 
 	return nil
 }
@@ -53,7 +57,6 @@ func (todosList *TodosList) Delete(index int) error {
 	*todosList = append((*todosList)[:index], (*todosList)[index+1:]...)
 	return nil
 }
-
 
 func (todosList *TodosList) ToggleStatus(index int) error {
 	if err := todosList.ValidateIndex(index); err != nil {
@@ -72,4 +75,27 @@ func (todosList *TodosList) GetTodo(index int) (Todo, error) {
 	}
 
 	return (*todosList)[index], nil
+}
+
+func (todosList *TodosList) Print() {
+	table := table.New(os.Stdout)
+
+	table.SetRowLines(false)
+	table.SetHeaders("ID", "Title", "Status", "Created At", "Completed At")
+
+	for index, todo := range *todosList {
+		isCompleted := "❌"
+		completedAt := ""
+
+		if todo.Status {
+			isCompleted = "✅"
+			if todo.UpdatedAt != nil {
+				completedAt = todo.UpdatedAt.Format(time.RFC1123)
+			}
+		}
+
+		table.AddRow(strconv.Itoa(index), todo.Content, isCompleted, todo.CreatedAt.Format(time.RFC1123), completedAt)
+	}
+
+	table.Render()
 }
